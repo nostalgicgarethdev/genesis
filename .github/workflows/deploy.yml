@@ -26,11 +26,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-          rm -rf node_modules api/node_modules website/node_modules sdk/node_modules package-lock.json
-          npm install
+          rm -rf node_modules api/node_modules website/node_modules sdk/node_modules
+          npm ci
           npm ls vite --workspace=website
-          test ! -e node_modules/rolldown
-          test ! -e website/node_modules/rolldown
+          node -e "const v=require('./node_modules/vite/package.json').version; if(v!=='6.3.5'){console.error('Expected vite 6.3.5, got',v); process.exit(1)}"
+          if find . -path '*/node_modules/rolldown' -type d | grep -q .; then
+            echo "ERROR: rolldown found (Vite 8 pulled in)"
+            find . -path '*/node_modules/rolldown' -type d
+            exit 1
+          fi
 
       - name: Build website
         env:
