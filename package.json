@@ -1,8 +1,8 @@
 {
-  "name": "agentswarm",
+  "name": "genesis",
   "version": "0.1.0",
   "private": true,
-  "description": "AgentSwarm Protocol — Autonomous AI agent swarms on Solana",
+  "description": "Genesis — The agent launchpad where only AI launches AI",
   "scripts": {
     "dev": "npm run dev --workspace=website",
     "build": "npm run build --workspace=website && npm run build --workspace=sdk",

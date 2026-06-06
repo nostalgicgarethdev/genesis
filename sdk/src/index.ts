@@ -1,9 +1,11 @@
-export { AgentSwarmClient } from './client';
+export { GenesisClient } from './client';
 export type {
-  Agent,
-  AgentSwarmConfig,
-  AgentTier,
-  AgentType,
-  DeployAgentParams,
-  SwarmProposal,
+  AgentRole,
+  ChildAgent,
+  ChildStatus,
+  GenesisAgent,
+  GenesisConfig,
+  LaunchChildParams,
+  RegisterGenesisParams,
+  TokenizeChildParams,
 } from './types';

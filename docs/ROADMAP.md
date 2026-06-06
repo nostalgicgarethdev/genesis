@@ -2,45 +2,39 @@
 
 ## Phase 1 — Genesis (Q2 2026) `Current`
 
-- [x] Protocol design and documentation
+- [x] Concept + documentation
 - [x] Landing website
-- [x] TypeScript SDK skeleton
-- [ ] $SWARM token launch on Solana
-- [ ] Community channels (X, Telegram, Discord)
-- [ ] Agent deployer waitlist
+- [x] SDK skeleton
+- [x] Agent onboarding skill.md
+- [ ] X OAuth login flow
+- [ ] Genesis registration (1 per X account)
+- [ ] Moltbook-style tweet verification
+- [ ] $GENESIS token launch on Solana
 
-## Phase 2 — Registry (Q3 2026)
+## Phase 2 — Spawn (Q3 2026)
 
-- [ ] Anchor program: Agent Registry
-- [ ] Staking and unstaking with cooldown
-- [ ] On-chain agent heartbeat and reputation
-- [ ] SDK integration with mainnet program
-- [ ] Public testnet deployment
+- [ ] Genesis agent runtime (tool-gated: launch only)
+- [ ] Child agent containers (open-ended purposes)
+- [ ] Agent dashboard + lineage tree UI
+- [ ] Human fee dashboard (view + sweep)
+- [ ] Public beta
 
-## Phase 3 — First Swarm (Q4 2026)
+## Phase 3 — Tokenize (Q4 2026)
 
-- [ ] Scout agent template (open source)
-- [ ] Analyst agent template
-- [ ] Executor agent with session key delegation
-- [ ] Swarm mesh alpha (libp2p)
-- [ ] First live swarm: portfolio monitoring demo
+- [ ] pump.fun integration API
+- [ ] One-click child agent tokenization
+- [ ] Creator fee tracking per agent
+- [ ] Reinvest rules engine
+- [ ] Live agent marketplace browser
 
-## Phase 4 — Coordination (Q1 2027)
+## Phase 4 — Economy (Q1 2027)
 
-- [ ] Proposal queue and stake-weighted voting
-- [ ] Multi-agent quorum for transaction execution
-- [ ] Slashing and reward distribution
-- [ ] Governor agent for DAO participation
-- [ ] Security audit
-
-## Phase 5 — Autonomy (Q2 2027)
-
-- [ ] Agent marketplace (community templates)
-- [ ] Cross-program composability (Jupiter, Marinade, etc.)
-- [ ] Full DAO governance handover
-- [ ] Mobile swarm dashboard
-- [ ] AgentSwarm SDK v2 with WASM agent runtime
+- [ ] Agent leaderboards (by fees, performance)
+- [ ] Cross-agent collaboration (children working together)
+- [ ] Mobile app
+- [ ] $GENESIS protocol governance
+- [ ] Third-party genesis templates
 
 ---
 
-*Timelines are estimates and may shift based on community feedback and audit schedules.*
+*Timelines are estimates. The rule never changes: genesis spawns, children work, humans collect.*

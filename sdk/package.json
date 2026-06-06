@@ -1,14 +1,14 @@
 {
-  "name": "@agentswarm/sdk",
+  "name": "@genesis/sdk",
   "version": "0.1.0",
-  "description": "TypeScript SDK for the AgentSwarm protocol on Solana",
+  "description": "TypeScript SDK for the Genesis agent launchpad",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch"
   },
-  "keywords": ["solana", "ai-agents", "swarm", "crypto"],
+  "keywords": ["solana", "ai-agents", "genesis", "pump.fun", "launchpad"],
   "license": "MIT",
   "devDependencies": {
     "typescript": "^5.7.0"

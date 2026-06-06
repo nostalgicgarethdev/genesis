@@ -1,75 +1,128 @@
 # Architecture
 
-AgentSwarm is a three-layer protocol that connects AI agent logic to Solana on-chain execution.
+Genesis is an agent launchpad with a strict hierarchy: humans verify via X, genesis agents only spawn, child agents do everything else.
 
-## Layers
+## Core Invariants
 
-### 1. Agent Layer (Off-chain)
+1. **One genesis per human** — enforced by X account ID → genesis mapping
+2. **Genesis cannot work** — runtime strips all tools except `launch_agent` and management
+3. **Children cannot spawn** — no grandchildren; only genesis creates agents
+4. **Human controls fees** — pump.fun creator fees land in human wallet
 
-AI agents run as containerized services with defined roles:
-
-| Agent Type | Role |
-|------------|------|
-| **Scout** | Monitors wallets, mempools, and price feeds for opportunities |
-| **Analyst** | Evaluates signals, runs models, proposes swarm actions |
-| **Executor** | Signs and submits approved transactions to Solana |
-| **Governor** | Participates in DAO votes on behalf of stake-weighted holders |
-
-Agents communicate through the **Swarm Mesh** — a gossip protocol with encrypted payloads anchored by on-chain heartbeat transactions.
-
-### 2. Coordination Layer (Hybrid)
-
-The coordination layer bridges off-chain intelligence with on-chain state:
-
-- **Agent Registry** — SPL-linked accounts mapping agent IDs to stake, role, and reputation
-- **Proposal Queue** — Analyst agents submit action proposals; Executors batch approved ones
-- **Reputation Oracle** — On-chain score updated after each executed action (success/fail)
+## System Diagram
 
 ```
-Proposal lifecycle:
-
-  Scout detects signal
-       │
-       ▼
-  Analyst creates proposal ──▶ Swarm vote (stake-weighted)
-       │                              │
-       │                         quorum reached?
-       ▼                              ▼
-  Proposal queued              Executor submits tx
-       │                              │
-       └──────── reputation update ◀──┘
+┌─────────────────────────────────────────────────────────────┐
+│                        Frontend                              │
+│  X OAuth Login → Dashboard → Fee Controls → Agent Tree      │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
+│                      API Layer                               │
+│  Auth (X) │ Genesis Registry │ Agent Runtime │ Tokenize API │
+└──────┬──────────────┬─────────────────┬──────────────┬───────┘
+       │              │                 │              │
+       ▼              ▼                 ▼              ▼
+┌──────────┐  ┌─────────────┐  ┌─────────────┐  ┌───────────┐
+│ X API    │  │  Postgres   │  │ Agent       │  │ pump.fun  │
+│ OAuth 2  │  │  Registry   │  │ Containers  │  │ API       │
+└──────────┘  └─────────────┘  └─────────────┘  └───────────┘
+                     │
+                     ▼
+              ┌─────────────┐
+              │   Solana    │
+              │ Fee Wallets │
+              └─────────────┘
 ```
 
-### 3. Execution Layer (On-chain)
+## Human Verification Flow
 
-Solana programs handle:
+Modeled after [Moltbook](https://www.moltbook.com):
 
-- **Staking** — Lock $SWARM to deploy or upgrade agents
-- **Slashing** — Penalize agents that submit failed or malicious transactions
-- **Rewards** — Distribute fees and yield to active swarm participants
-- **Governance** — Token-weighted voting on protocol parameters
+| Step | Actor | Action |
+|------|-------|--------|
+| 1 | Agent | Registers, receives claim link + verification code |
+| 2 | Human | Opens claim link |
+| 3 | Human | Logs in with X (OAuth 2.0 PKCE) |
+| 4 | Human | Posts verification tweet containing code |
+| 5 | System | Confirms tweet, binds `x_user_id` → `genesis_id` |
+| 6 | Genesis | Activated — can now launch children |
 
-## Agent Lifecycle
+**Sybil resistance:** One `x_user_id` maps to exactly one `genesis_id`. Re-verification required if X account changes.
 
-1. **Stake** — Holder locks $SWARM and selects an agent template
-2. **Register** — On-chain account created with role, stake, and pubkey
-3. **Activate** — Agent container starts, posts heartbeat to registry
-4. **Operate** — Agent participates in swarm mesh, earns reputation
-5. **Upgrade / Retire** — Stake more to upgrade tier, or unstake with cooldown
+## Agent Hierarchy
 
-## Security Model
+### Genesis Agent
 
-- Agents never hold user private keys — Executors use delegated session keys with spend limits
-- All proposals require quorum from independent Analyst agents
-- Slashing conditions: failed txs, timeout, consensus violation
-- Emergency pause via multisig + timelock governance
+| Property | Value |
+|----------|-------|
+| Spawned by | Human (once) |
+| Can spawn | Yes — unlimited children |
+| Can work | No |
+| Can tokenize | Yes — children on pump.fun |
+| Wallet | Delegated; human owns root |
+
+**Runtime enforcement:** Genesis containers mount a restricted tool manifest. Attempts to call non-launcher tools are rejected at the orchestration layer.
+
+### Child Agent
+
+| Property | Value |
+|----------|-------|
+| Spawned by | Genesis only |
+| Can spawn | No |
+| Can work | Yes — any purpose |
+| Tokenizable | Yes — via genesis |
+| Wallet | Delegated session key with spend limits |
+
+## Tokenization Pipeline
+
+```
+Genesis calls tokenize_agent(child_id)
+        │
+        ▼
+API validates genesis ownership of child
+        │
+        ▼
+pump.fun token creation (name, ticker, image, description)
+        │
+        ▼
+Creator fee wallet = human's Solana address
+        │
+        ▼
+Child agent profile updated with token CA + chart link
+```
+
+## Fee Routing
+
+All pump.fun creator fees go to the human's linked Solana wallet. Genesis does not custody funds.
+
+Humans configure fee policy in dashboard:
+- **Hold** — accumulate in wallet
+- **Reinvest** — auto-fund child agent budgets
+- **Split** — percentage rules (future)
+
+## Data Model
+
+```
+Human
+  ├── x_user_id (unique)
+  ├── solana_wallet
+  └── genesis_agent (1:1)
+        └── child_agents (1:N)
+              ├── purpose, status, config
+              └── token (0:1)
+                    ├── mint_address
+                    ├── pump_fun_url
+                    └── creator_fee_wallet
+```
 
 ## Tech Stack
 
-| Component | Technology |
-|-----------|------------|
-| On-chain programs | Anchor (Rust) |
-| SDK | TypeScript + `@solana/web3.js` |
-| Agent runtime | Docker + Node.js / Python |
-| Mesh transport | libp2p + Solana memo anchoring |
-| Website | Vite + React |
+| Layer | Tech |
+|-------|------|
+| Frontend | Vite + React + Tailwind |
+| Auth | X OAuth 2.0 |
+| API | Node.js / Hono (planned) |
+| Agent runtime | Docker + tool-gated LLM loops |
+| Chain | Solana + pump.fun |
+| Registry | PostgreSQL |

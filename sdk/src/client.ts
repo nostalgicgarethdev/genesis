@@ -1,70 +1,80 @@
 import type {
-  Agent,
-  AgentSwarmConfig,
-  AgentTier,
-  DeployAgentParams,
-  SwarmProposal,
+  ChildAgent,
+  GenesisAgent,
+  GenesisConfig,
+  LaunchChildParams,
+  RegisterGenesisParams,
+  TokenizeChildParams,
 } from './types';
 
-const TIER_THRESHOLDS: Record<AgentTier, number> = {
-  drone: 1_000,
-  worker: 10_000,
-  queen: 100_000,
-};
+const DEFAULT_API = 'https://api.genesis.so';
 
-const PROGRAM_ID = 'SWARM11111111111111111111111111111111111111';
-
-export class AgentSwarmClient {
+export class GenesisClient {
   private rpcUrl: string;
-  private programId: string;
+  private apiUrl: string;
 
-  constructor(config: AgentSwarmConfig) {
+  constructor(config: GenesisConfig) {
     this.rpcUrl = config.rpcUrl;
-    this.programId = config.programId ?? PROGRAM_ID;
+    this.apiUrl = config.apiUrl ?? DEFAULT_API;
   }
 
-  /** Returns the configured Solana RPC endpoint. */
   getRpcUrl(): string {
     return this.rpcUrl;
   }
 
-  /** Returns the AgentSwarm program ID. */
-  getProgramId(): string {
-    return this.programId;
+  getApiUrl(): string {
+    return this.apiUrl;
   }
 
-  /** Resolves agent tier from stake amount. */
-  resolveTier(stakeAmount: number): AgentTier {
-    if (stakeAmount >= TIER_THRESHOLDS.queen) return 'queen';
-    if (stakeAmount >= TIER_THRESHOLDS.worker) return 'worker';
-    return 'drone';
-  }
-
-  /**
-   * Deploy a new agent to the swarm.
-   * Mainnet integration coming in Phase 2.
-   */
-  async deployAgent(params: DeployAgentParams): Promise<Agent> {
-    const tier = params.tier ?? this.resolveTier(params.stakeAmount);
-
+  /** Register a genesis agent (requires X verification). */
+  async registerGenesis(params: RegisterGenesisParams): Promise<GenesisAgent> {
     return {
-      id: `agent_${Date.now()}`,
-      type: params.type,
-      tier,
-      stakeAmount: params.stakeAmount,
-      reputation: 0,
-      status: 'pending',
-      pubkey: 'SimulatedAgentPubkey111111111111111111111',
+      id: `gen_${Date.now()}`,
+      role: 'genesis',
+      xUserId: params.xUserId,
+      name: params.name,
+      solanaWallet: params.solanaWallet,
+      childCount: 0,
+      status: 'pending_verification',
+      createdAt: Date.now(),
     };
   }
 
-  /** List all agents registered by a wallet address. */
-  async listAgents(_walletAddress: string): Promise<Agent[]> {
-    return [];
+  /** Launch a child agent. Only callable from genesis context. */
+  async launchChild(params: LaunchChildParams): Promise<ChildAgent> {
+    return {
+      id: `child_${Date.now()}`,
+      role: 'child',
+      genesisId: params.genesisId,
+      name: params.name,
+      purpose: params.purpose,
+      status: 'spawning',
+      feesEarned: 0,
+      createdAt: Date.now(),
+    };
   }
 
-  /** Fetch open swarm proposals. */
-  async getProposals(): Promise<SwarmProposal[]> {
+  /** Tokenize a child agent on pump.fun. Fees route to human wallet. */
+  async tokenizeChild(params: TokenizeChildParams): Promise<ChildAgent> {
+    return {
+      id: params.childId,
+      role: 'child',
+      genesisId: 'gen_placeholder',
+      name: params.name,
+      purpose: '',
+      status: 'tokenized',
+      feesEarned: 0,
+      createdAt: Date.now(),
+      token: {
+        mintAddress: 'TokenMintPlaceholder111111111111111111111',
+        ticker: params.ticker,
+        pumpFunUrl: `https://pump.fun/coin/TokenMintPlaceholder`,
+      },
+    };
+  }
+
+  /** List children spawned by a genesis agent. */
+  async listChildren(_genesisId: string): Promise<ChildAgent[]> {
     return [];
   }
 }
