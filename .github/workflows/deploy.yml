@@ -23,20 +23,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: website/package.json
 
       - name: Install dependencies
-        working-directory: website
         run: |
-          rm -rf node_modules package-lock.json
+          rm -rf node_modules api/node_modules website/node_modules sdk/node_modules package-lock.json
           npm install
+          npm ls vite --workspace=website
+          test ! -e node_modules/rolldown
+          test ! -e website/node_modules/rolldown
 
       - name: Build website
-        working-directory: website
         env:
           GITHUB_PAGES: true
-        run: npm run build
+        run: npm run build --workspace=website
 
       - name: Add SPA fallback
         run: cp website/dist/index.html website/dist/404.html
