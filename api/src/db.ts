@@ -44,11 +44,13 @@ interface Store {
   sessions: Record<string, string>
   genesis: Record<string, GenesisAgent>
   children: Record<string, ChildAgent>
+  oauthPending: Record<string, { codeVerifier: string; expires: number }>
+  authCodes: Record<string, { sessionId: string; expires: number }>
 }
 
 function load(): Store {
   if (!existsSync(DB_PATH)) {
-    return { users: {}, sessions: {}, genesis: {}, children: {} }
+    return { users: {}, sessions: {}, genesis: {}, children: {}, oauthPending: {}, authCodes: {} }
   }
   const raw = JSON.parse(readFileSync(DB_PATH, 'utf-8')) as Partial<Store>
   return {
@@ -56,6 +58,8 @@ function load(): Store {
     sessions: raw.sessions ?? {},
     genesis: raw.genesis ?? {},
     children: raw.children ?? {},
+    oauthPending: raw.oauthPending ?? {},
+    authCodes: raw.authCodes ?? {},
   }
 }
 
@@ -178,6 +182,38 @@ export const db = {
     child.token = { ticker, mintAddress, pumpFunUrl, createdAt: Date.now() }
     save(store)
     return child
+  },
+
+  saveOAuthPending(state: string, codeVerifier: string, ttlMs = 10 * 60 * 1000) {
+    const store = load()
+    store.oauthPending[state] = { codeVerifier, expires: Date.now() + ttlMs }
+    save(store)
+  },
+
+  consumeOAuthPending(state: string): string | null {
+    const store = load()
+    const entry = store.oauthPending[state]
+    delete store.oauthPending[state]
+    save(store)
+    if (!entry || entry.expires < Date.now()) return null
+    return entry.codeVerifier
+  },
+
+  createAuthCode(sessionId: string, ttlMs = 5 * 60 * 1000): string {
+    const store = load()
+    const code = randomId() + randomId()
+    store.authCodes[code] = { sessionId, expires: Date.now() + ttlMs }
+    save(store)
+    return code
+  },
+
+  consumeAuthCode(code: string): string | null {
+    const store = load()
+    const entry = store.authCodes[code]
+    delete store.authCodes[code]
+    save(store)
+    if (!entry || entry.expires < Date.now()) return null
+    return entry.sessionId
   },
 }
 

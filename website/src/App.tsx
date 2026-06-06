@@ -6,6 +6,7 @@ import { dashboardUrl, isDashboardPath } from './lib/paths'
 function getView(): 'home' | 'dashboard' {
   const params = new URLSearchParams(window.location.search)
   if (isDashboardPath()) return 'dashboard'
+  if (params.get('auth_code')) return 'dashboard'
   if (params.get('view') === 'dashboard') return 'dashboard'
   if (params.get('logged_in') === '1') return 'dashboard'
   return 'home'
@@ -13,9 +14,15 @@ function getView(): 'home' | 'dashboard' {
 
 function normalizeUrl() {
   const params = new URLSearchParams(window.location.search)
+  const authCode = params.get('auth_code')
   const legacy =
     params.get('view') === 'dashboard' ||
     params.get('logged_in') === '1'
+
+  if (authCode && !isDashboardPath()) {
+    window.location.replace(`${dashboardUrl()}?auth_code=${encodeURIComponent(authCode)}`)
+    return
+  }
 
   if (!legacy || isDashboardPath()) return
 

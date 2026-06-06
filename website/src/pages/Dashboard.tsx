@@ -38,6 +38,9 @@ export function Dashboard() {
           setLoading(false)
           return
         }
+        setAuth({ authenticated: false })
+        setLoading(false)
+        return
       }
       await load()
     }

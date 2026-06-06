@@ -12,7 +12,7 @@ import { CTA } from '../components/home/CTA'
 
 const AUTH_ERRORS: Record<string, string> = {
   invalid_state: 'Login session expired. Try again.',
-  token_exchange: 'X login failed at token exchange. Check OAuth credentials.',
+  token_exchange: 'X login failed — check X_CLIENT_ID, X_CLIENT_SECRET, and callback URL on Render.',
   user_fetch: 'Could not load your X profile after login.',
 }
 
