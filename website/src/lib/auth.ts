@@ -1,4 +1,4 @@
-import { apiUrl, homeUrl, loggedInUrl } from './paths'
+import { apiPath, dashboardUrl, homeUrl } from './paths'
 
 export interface AuthUser {
   id: string
@@ -58,9 +58,18 @@ function saveDevState(state: AuthState) {
   localStorage.setItem('genesis_dev', JSON.stringify(state))
 }
 
+async function apiAvailable(): Promise<boolean> {
+  try {
+    const res = await fetch(apiPath('/health'), { signal: AbortSignal.timeout(3000) })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 export async function fetchAuth(): Promise<AuthState> {
   try {
-    const res = await fetch('/api/auth/me', { credentials: 'include' })
+    const res = await fetch(apiPath('/auth/me'), { credentials: 'include' })
     if (res.ok) return res.json()
   } catch {
     // API not running — use local dev fallback
@@ -69,22 +78,18 @@ export async function fetchAuth(): Promise<AuthState> {
 }
 
 export async function loginWithX(): Promise<void> {
-  try {
-    const res = await fetch('/api/health', { signal: AbortSignal.timeout(3000) })
-    if (res.ok) {
-      window.location.href = apiUrl('/api/auth/x')
-      return
-    }
-  } catch {
-    // fall through to dev login (GitHub Pages / offline)
+  if (await apiAvailable()) {
+    window.location.href = apiPath('/auth/x')
+    return
   }
+
   saveDevState({ authenticated: true, user: DEV_USER, genesis: null, children: [] })
-  window.location.href = loggedInUrl()
+  window.location.href = dashboardUrl()
 }
 
 export async function createGenesis(name?: string): Promise<GenesisAgent> {
   try {
-    const res = await fetch('/api/auth/genesis', {
+    const res = await fetch(apiPath('/auth/genesis'), {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -110,7 +115,7 @@ export async function createGenesis(name?: string): Promise<GenesisAgent> {
 
 export async function verifyGenesis(): Promise<GenesisAgent> {
   try {
-    const res = await fetch('/api/auth/genesis/verify', { method: 'POST', credentials: 'include' })
+    const res = await fetch(apiPath('/auth/genesis/verify'), { method: 'POST', credentials: 'include' })
     if (res.ok) {
       const data = await res.json()
       return data.genesis
@@ -128,7 +133,7 @@ export async function verifyGenesis(): Promise<GenesisAgent> {
 
 export async function spawnChild(name: string, purpose: string): Promise<ChildAgent> {
   try {
-    const res = await fetch('/api/agents/children', {
+    const res = await fetch(apiPath('/agents/children'), {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -157,7 +162,7 @@ export async function spawnChild(name: string, purpose: string): Promise<ChildAg
 
 export async function tokenizeChild(childId: string, ticker: string): Promise<ChildAgent> {
   try {
-    const res = await fetch(`/api/agents/children/${childId}/tokenize`, {
+    const res = await fetch(apiPath(`/agents/children/${childId}/tokenize`), {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -185,7 +190,7 @@ export async function tokenizeChild(childId: string, ticker: string): Promise<Ch
 
 export async function pauseChild(childId: string): Promise<void> {
   try {
-    await fetch(`/api/agents/children/${childId}/pause`, { method: 'POST', credentials: 'include' })
+    await fetch(apiPath(`/agents/children/${childId}/pause`), { method: 'POST', credentials: 'include' })
     return
   } catch { /* dev */ }
   const state = devAuthState()
@@ -195,7 +200,7 @@ export async function pauseChild(childId: string): Promise<void> {
 
 export async function resumeChild(childId: string): Promise<void> {
   try {
-    await fetch(`/api/agents/children/${childId}/resume`, { method: 'POST', credentials: 'include' })
+    await fetch(apiPath(`/agents/children/${childId}/resume`), { method: 'POST', credentials: 'include' })
     return
   } catch { /* dev */ }
   const state = devAuthState()
@@ -205,7 +210,7 @@ export async function resumeChild(childId: string): Promise<void> {
 
 export async function logout(): Promise<void> {
   try {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+    await fetch(apiPath('/auth/logout'), { method: 'POST', credentials: 'include' })
   } catch { /* dev */ }
   localStorage.removeItem('genesis_dev')
   window.location.href = homeUrl()

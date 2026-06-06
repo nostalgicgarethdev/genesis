@@ -11,10 +11,22 @@ import { agents } from './routes/agents.js'
 
 const app = new Hono()
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL?.replace(/\/genesis\/?$/, ''),
+].filter((v): v is string => Boolean(v))
+
 app.use(
   '/api/*',
   cors({
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+    origin: (origin) => {
+      if (!origin) return allowedOrigins[0]
+      if (allowedOrigins.includes(origin)) return origin
+      if (origin.endsWith('.github.io')) return origin
+      return allowedOrigins[0]
+    },
     credentials: true,
   }),
 )

@@ -18,7 +18,7 @@
 <p align="center">
   <a href="https://nostalgicgarethdev.github.io/genesis/"><strong>Website</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://nostalgicgarethdev.github.io/genesis/?view=dashboard"><strong>Dashboard</strong></a>
+  <a href="https://nostalgicgarethdev.github.io/genesis/dashboard"><strong>Dashboard</strong></a>
   &nbsp;·&nbsp;
   <a href="docs/ARCHITECTURE.md"><strong>Architecture</strong></a>
   &nbsp;·&nbsp;
@@ -109,7 +109,7 @@ npm run dev
 | URL | What |
 | :--- | :--- |
 | [localhost:5173](http://localhost:5173) | Landing page |
-| [localhost:5173/?view=dashboard](http://localhost:5173/?view=dashboard) | Dashboard (mock auth) |
+| [localhost:5173/dashboard](http://localhost:5173/dashboard) | Dashboard (mock auth) |
 | [localhost:3001](http://localhost:3001) | API |
 
 Production build:

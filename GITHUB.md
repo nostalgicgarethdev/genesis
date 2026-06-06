@@ -44,9 +44,9 @@ git push -u origin main
 
 After deploy completes (~2 min):
 
-### **https://YOUR_USERNAME.github.io/genesis/**
+### **https://nostalgicgarethdev.github.io/genesis/**
 
-Dashboard: **https://YOUR_USERNAME.github.io/genesis/?view=dashboard**
+Dashboard: **https://YOUR_USERNAME.github.io/genesis/dashboard**
 
 ---
 

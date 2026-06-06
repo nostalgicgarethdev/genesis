@@ -11,6 +11,15 @@ const X_USER_URL = 'https://api.twitter.com/2/users/me'
 
 const SCOPES = ['tweet.read', 'users.read', 'offline.access'].join(' ')
 
+function dashboardRedirect(frontend: string): string {
+  return `${frontend.replace(/\/$/, '')}/dashboard`
+}
+
+function homeRedirect(frontend: string, query: string): string {
+  const base = frontend.replace(/\/$/, '')
+  return query ? `${base}/?${query}` : `${base}/`
+}
+
 export const auth = new Hono()
 
 function setUserSession(c: Context, xUserId: string) {
@@ -38,7 +47,7 @@ auth.get('/x', async (c) => {
     })
     setUserSession(c, 'dev_user_1')
     console.log('[dev] Mock login — no X credentials needed')
-    return c.redirect(`${frontend}/?logged_in=1`)
+    return c.redirect(dashboardRedirect(frontend))
   }
 
   const clientId = process.env.X_CLIENT_ID
@@ -79,7 +88,7 @@ auth.get('/x/callback', async (c) => {
   deleteCookie(c, 'oauth_verifier', { path: '/' })
 
   if (!code || !state || state !== storedState || !codeVerifier) {
-    return c.redirect(`${frontend}/?auth=error&reason=invalid_state`)
+    return c.redirect(homeRedirect(frontend, 'auth=error&reason=invalid_state'))
   }
 
   const clientId = process.env.X_CLIENT_ID!
@@ -103,7 +112,7 @@ auth.get('/x/callback', async (c) => {
   if (!tokenRes.ok) {
     const err = await tokenRes.text()
     console.error('Token exchange failed:', err)
-    return c.redirect(`${frontend}/?auth=error&reason=token_exchange`)
+    return c.redirect(homeRedirect(frontend, 'auth=error&reason=token_exchange'))
   }
 
   const tokens = (await tokenRes.json()) as {
@@ -116,7 +125,7 @@ auth.get('/x/callback', async (c) => {
   })
 
   if (!userRes.ok) {
-    return c.redirect(`${frontend}/?auth=error&reason=user_fetch`)
+    return c.redirect(homeRedirect(frontend, 'auth=error&reason=user_fetch'))
   }
 
   const { data } = (await userRes.json()) as {
@@ -133,7 +142,7 @@ auth.get('/x/callback', async (c) => {
   })
 
   setUserSession(c, data.id)
-  return c.redirect(`${frontend}/?logged_in=1`)
+  return c.redirect(dashboardRedirect(frontend))
 })
 
 auth.get('/me', (c) => {

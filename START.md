@@ -22,15 +22,20 @@ If you see "Genesis server is running" → server is fine.
 **http://localhost:5173/**
 
 ## Step 4 — Dashboard
-**http://localhost:5173/?view=dashboard**
+**http://localhost:5173/dashboard**
 
-Or click **Login with X**
+Or click **Continue with X**
+
+Legacy query URLs still work: `/?view=dashboard` and `/?logged_in=1`
 
 ---
 
-## NEVER use these (they 404):
-- ~~http://localhost:5173/dashboard~~
-- ~~http://localhost:5173/#/dashboard~~
+## Real X OAuth (optional)
+1. Copy `.env.example` → `.env`
+2. Set `X_CLIENT_ID`, `X_CLIENT_SECRET`, `X_REDIRECT_URI`
+3. Set `DEV_MOCK_AUTH=false`
+4. In X Developer Portal, add callback: `http://localhost:5173/api/auth/x/callback`
+5. `npm run dev` — login redirects to X, then back to `/dashboard`
 
 ## Website only (no API):
 ```bash

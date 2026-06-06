@@ -4,6 +4,7 @@ import {
   type AuthState, type ChildAgent,
 } from '../lib/auth'
 import { goHome } from '../lib/nav'
+import { homeUrl } from '../lib/paths'
 import { Logo } from '../components/brand/Logo'
 import { SpawnForm } from '../components/dashboard/SpawnForm'
 import { ChildCard } from '../components/dashboard/ChildCard'
@@ -46,7 +47,7 @@ export function Dashboard() {
         <button type="button" onClick={loginWithX} className="btn-primary mt-6 rounded-lg px-6 py-3 text-sm">
           Continue with X
         </button>
-        <a href="/" onClick={(e) => { e.preventDefault(); goHome() }} className="mt-4 text-sm text-muted hover:text-text">
+        <a href={homeUrl()} onClick={(e) => { e.preventDefault(); goHome() }} className="mt-4 text-sm text-muted hover:text-text">
           ← Back home
         </a>
       </div>
@@ -61,7 +62,7 @@ export function Dashboard() {
     <div className="min-h-screen">
       <header className="border-b border-line bg-surface/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <a href="/" onClick={(e) => { e.preventDefault(); goHome() }}>
+          <a href={homeUrl()} onClick={(e) => { e.preventDefault(); goHome() }}>
             <Logo size={32} />
           </a>
           <div className="flex items-center gap-4">
