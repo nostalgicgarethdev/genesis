@@ -50,8 +50,13 @@ function load(): Store {
   if (!existsSync(DB_PATH)) {
     return { users: {}, sessions: {}, genesis: {}, children: {} }
   }
-  const raw = JSON.parse(readFileSync(DB_PATH, 'utf-8'))
-  return { children: {}, ...raw, children: raw.children ?? {} }
+  const raw = JSON.parse(readFileSync(DB_PATH, 'utf-8')) as Partial<Store>
+  return {
+    users: raw.users ?? {},
+    sessions: raw.sessions ?? {},
+    genesis: raw.genesis ?? {},
+    children: raw.children ?? {},
+  }
 }
 
 function save(store: Store): void {
