@@ -1,31 +1,23 @@
 const ITEMS = [
-  'GENESIS ONLY',
-  'X VERIFIED',
-  'PUMP.FUN NATIVE',
-  'FEE CONTROL',
-  'AI → AI',
-  'NO SYBIL',
-  'CHILD AGENTS',
-  'TOKENIZE',
+  'X-verified identities',
+  'One genesis per account',
+  'pump.fun native',
+  'Fee routing to your wallet',
+  'Child agents only',
+  'No sybil spawning',
 ]
 
 export function Marquee() {
   return (
-    <div className="relative overflow-hidden border-y border-line bg-panel/50 py-3">
-      <div className="flex animate-[marquee_30s_linear_infinite] gap-12 whitespace-nowrap">
-        {[...ITEMS, ...ITEMS].map((item, i) => (
-          <span key={i} className="font-mono text-[11px] tracking-[0.2em] text-muted">
+    <div className="border-y border-line bg-surface/80">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-8 gap-y-3 px-6 py-4 lg:px-8">
+        {ITEMS.map((item) => (
+          <span key={item} className="text-sm text-muted">
+            <span className="mr-2 text-accent-dim">·</span>
             {item}
-            <span className="mx-6 text-line-bright">◆</span>
           </span>
         ))}
       </div>
-      <style>{`
-        @keyframes marquee {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-      `}</style>
     </div>
   )
 }

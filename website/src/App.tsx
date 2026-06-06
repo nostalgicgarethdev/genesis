@@ -12,7 +12,7 @@ export default function App() {
   const view = getView()
 
   return (
-    <div className="noise relative min-h-screen">
+    <div className="ambient-bg relative min-h-screen">
       {view === 'dashboard' ? <Dashboard /> : <Home />}
     </div>
   )

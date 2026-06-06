@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: "Syne", system-ui, sans-serif;
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Newsreader", "Georgia", serif;
+  --font-sans: "Source Sans 3", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  --color-void: #030306;
-  --color-panel: #0a0a10;
-  --color-panel-2: #0f0f18;
-  --color-line: #1a1a28;
-  --color-line-bright: #2a2a40;
-  --color-violet: #8b5cf6;
-  --color-violet-bright: #a78bfa;
-  --color-mint: #34d399;
-  --color-mint-dim: #10b981;
-  --color-ice: #38bdf8;
-  --color-text: #f0f0f8;
-  --color-muted: #8888a8;
+  --color-void: #09090b;
+  --color-surface: #111113;
+  --color-surface-2: #18181b;
+  --color-line: #27272a;
+  --color-line-bright: #3f3f46;
+  --color-accent: #c4a574;
+  --color-accent-bright: #e8d4b0;
+  --color-accent-dim: #9a7b4f;
+  --color-sage: #7d9a82;
+  --color-sage-dim: #5c7a61;
+  --color-text: #fafafa;
+  --color-muted: #a1a1aa;
 }
 
 * {
@@ -37,149 +37,81 @@ body {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--color-violet) 35%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
-/* Noise overlay */
-.noise::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0.025;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+.ambient-bg {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% -10%, color-mix(in srgb, var(--color-accent) 7%, transparent), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 100% 20%, color-mix(in srgb, var(--color-sage) 5%, transparent), transparent),
+    var(--color-void);
 }
 
-/* Grid */
-.grid-bg {
-  background-image:
-    linear-gradient(color-mix(in srgb, var(--color-line) 60%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--color-line) 60%, transparent) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 20%, transparent 70%);
-}
-
-.gradient-text {
-  background: linear-gradient(135deg, #fff 0%, var(--color-violet-bright) 45%, var(--color-mint) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gradient-border {
-  position: relative;
-  background: var(--color-panel);
-  border-radius: 16px;
-}
-
-.gradient-border::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--color-violet) 50%, transparent), color-mix(in srgb, var(--color-line) 80%, transparent), color-mix(in srgb, var(--color-mint) 30%, transparent));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
+.accent-text {
+  color: var(--color-accent-bright);
 }
 
 .panel {
-  background: color-mix(in srgb, var(--color-panel) 90%, transparent);
+  background: var(--color-surface);
   border: 1px solid var(--color-line);
-  backdrop-filter: blur(20px);
+}
+
+.panel-elevated {
+  background: linear-gradient(180deg, var(--color-surface-2) 0%, var(--color-surface) 100%);
+  border: 1px solid var(--color-line);
 }
 
 .panel-hover {
-  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  transition: border-color 0.25s, box-shadow 0.25s;
 }
 
 .panel-hover:hover {
   border-color: var(--color-line-bright);
-  box-shadow: 0 0 40px color-mix(in srgb, var(--color-violet) 8%, transparent);
-  transform: translateY(-2px);
-}
-
-.glow-orb {
-  filter: blur(80px);
-  pointer-events: none;
+  box-shadow: 0 12px 40px color-mix(in srgb, black 40%, transparent);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #fff 0%, #e8e8f0 100%);
-  color: #0a0a10;
+  background: var(--color-accent);
+  color: var(--color-void);
   font-weight: 600;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, transform 0.2s;
 }
 
 .btn-primary:hover {
+  background: var(--color-accent-bright);
   transform: translateY(-1px);
-  box-shadow: 0 8px 32px color-mix(in srgb, white 15%, transparent);
 }
 
 .btn-ghost {
   border: 1px solid var(--color-line-bright);
-  background: color-mix(in srgb, var(--color-panel) 60%, transparent);
+  background: transparent;
+  color: var(--color-text);
   transition: border-color 0.2s, background 0.2s;
 }
 
 .btn-ghost:hover {
-  border-color: var(--color-violet);
-  background: color-mix(in srgb, var(--color-violet) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 50%, var(--color-line-bright));
+  background: color-mix(in srgb, var(--color-accent) 6%, transparent);
 }
 
-@keyframes scan {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent-dim);
 }
 
-.scan-line {
-  animation: scan 8s linear infinite;
-}
-
-@keyframes pulse-ring {
-  0% { transform: scale(1); opacity: 0.6; }
-  100% { transform: scale(1.8); opacity: 0; }
-}
-
-.pulse-ring {
-  animation: pulse-ring 2s ease-out infinite;
-}
-
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes pulse-soft {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.04); }
-}
-
-.animate-spin-slow {
-  animation: spin-slow linear infinite;
-}
-
-.animate-pulse-soft {
-  animation: pulse-soft 3s ease-in-out infinite;
-}
-
-.animate-fade-up {
-  animation: fade-up 0.6s ease-out forwards;
-}
-
-.animate-float {
-  animation: float 4s ease-in-out infinite;
+.divider-fade {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-line-bright), transparent);
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+.animate-fade-up {
+  animation: fade-up 0.7s ease-out forwards;
 }
