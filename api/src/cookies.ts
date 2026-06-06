@@ -14,10 +14,11 @@ export function sessionCookieOptions(maxAge = 60 * 60 * 24 * 30) {
 }
 
 export function oauthCookieOptions(maxAge: number) {
+  const prod = isProduction()
   return {
     httpOnly: true,
-    secure: isProduction(),
-    sameSite: 'Lax' as const,
+    secure: prod,
+    sameSite: prod ? ('None' as const) : ('Lax' as const),
     maxAge,
     path: '/',
   }
@@ -30,4 +31,8 @@ export function clearSessionCookieOptions() {
     secure: prod,
     sameSite: prod ? ('None' as const) : ('Lax' as const),
   }
+}
+
+export function clearOauthCookieOptions() {
+  return clearSessionCookieOptions()
 }

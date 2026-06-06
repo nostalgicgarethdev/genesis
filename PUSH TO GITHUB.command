@@ -23,7 +23,7 @@ fi
 
 gh auth status || gh auth login
 
-gh repo view garethlee/genesis &>/dev/null && \
+gh repo view nostalgicgarethdev/genesis &>/dev/null && \
   git push origin main || \
   gh repo create genesis --public --source=. --remote=origin --push
 
@@ -31,10 +31,10 @@ echo ""
 echo "  ✓ Code pushed!"
 echo ""
 echo "  Next: enable GitHub Pages"
-echo "  → github.com/garethlee/genesis/settings/pages"
+echo "  → github.com/nostalgicgarethdev/genesis/settings/pages"
 echo "  → Source: GitHub Actions"
 echo ""
 echo "  Live site (after deploy):"
-echo "  → https://garethlee.github.io/genesis/"
+echo "  → https://nostalgicgarethdev.github.io/genesis/"
 echo ""
 read -p "Press Enter..."

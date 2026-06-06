@@ -67,19 +67,36 @@ async function apiAvailable(): Promise<boolean> {
   }
 }
 
+const usesRemoteApi = () => Boolean(import.meta.env.VITE_API_URL)
+
 export async function fetchAuth(): Promise<AuthState> {
   try {
     const res = await fetch(apiPath('/auth/me'), { credentials: 'include' })
     if (res.ok) return res.json()
+    if (usesRemoteApi()) return { authenticated: false }
   } catch {
-    // API not running — use local dev fallback
+    if (usesRemoteApi()) return { authenticated: false }
   }
   return devAuthState()
 }
 
+export async function completeAuthSession(code: string): Promise<AuthState | null> {
+  try {
+    const res = await fetch(apiPath('/auth/session/complete'), {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    })
+    if (res.ok) return res.json()
+  } catch {
+    // ignore
+  }
+  return null
+}
+
 export async function loginWithX(): Promise<void> {
-  const remoteApi = Boolean(import.meta.env.VITE_API_URL)
-  if (remoteApi || await apiAvailable()) {
+  if (usesRemoteApi() || await apiAvailable()) {
     window.location.href = apiPath('/auth/x')
     return
   }

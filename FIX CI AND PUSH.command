@@ -3,14 +3,14 @@ cd "$(dirname "$0")"
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 echo ""
-echo "  Genesis — fix CI and force-push to GitHub"
+echo "  Genesis — fix CI and push to GitHub"
 echo ""
 
 echo "  Remote:"
 git remote -v
 echo ""
 
-# --- Write website/package.json (full file, no ambiguity) ---
+# --- website/package.json ---
 cat > website/package.json << 'EOF'
 {
   "name": "website",
@@ -19,7 +19,7 @@ cat > website/package.json << 'EOF'
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && npx --yes vite@6.3.5 build",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -29,7 +29,7 @@ cat > website/package.json << 'EOF'
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
-    "@tailwindcss/vite": "4.0.0",
+    "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -46,9 +46,8 @@ cat > website/package.json << 'EOF'
 }
 EOF
 echo "  ✓ website/package.json"
-grep '"build"' website/package.json
 
-# --- Write deploy workflow ---
+# --- deploy workflow (monorepo npm ci) ---
 mkdir -p .github/workflows
 cat > .github/workflows/deploy.yml << 'EOF'
 name: Deploy to GitHub Pages
@@ -70,37 +69,27 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: website
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
-      - name: Install and build website
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build website
         env:
           GITHUB_PAGES: true
         run: |
-          if [ -f ../package.json ]; then mv ../package.json ../_package.json.workspace; fi
-          if [ -f ../package-lock.json ]; then mv ../package-lock.json ../_package-lock.json.workspace; fi
-
-          rm -rf node_modules package-lock.json
-          npm install
-
           VITE_VER=$(node -p "require('./node_modules/vite/package.json').version")
           echo "vite version: $VITE_VER"
           test "$VITE_VER" = "6.3.5"
-
-          npm run build
-
-          if [ -f ../_package.json.workspace ]; then mv ../_package.json.workspace ../package.json; fi
-          if [ -f ../_package-lock.json.workspace ]; then mv ../_package-lock.json.workspace ../package-lock.json; fi
+          npm run build --workspace=website
 
       - name: Add SPA fallback
-        working-directory: .
         run: cp website/dist/index.html website/dist/404.html
 
       - uses: actions/upload-pages-artifact@v3
@@ -118,35 +107,32 @@ jobs:
         uses: actions/deploy-pages@v4
 EOF
 echo "  ✓ .github/workflows/deploy.yml"
-grep "Install and build" .github/workflows/deploy.yml
+
+# Regenerate lockfile if node_modules missing
+if [ ! -d node_modules/vite ]; then
+  echo ""
+  echo "  Regenerating package-lock.json (vite 6.3.5)..."
+  rm -rf node_modules api/node_modules website/node_modules sdk/node_modules
+  npm install
+fi
 
 echo ""
-echo "  What git sees:"
-git diff website/package.json .github/workflows/deploy.yml | head -30
+echo "  vite version:"
+node -p "require('./node_modules/vite/package.json').version"
 echo ""
 
-git add -f website/package.json .github/workflows/deploy.yml "FIX CI AND PUSH.command"
+git add -f website/package.json .github/workflows/deploy.yml package-lock.json "FIX CI AND PUSH.command" website/src/index.css
 
 if git diff --cached --quiet; then
-  echo "  WARNING: git still sees no changes vs last commit."
-  echo "  Last commit build script:"
-  git show HEAD:website/package.json 2>/dev/null | grep '"build"' || true
-  echo ""
-  echo "  Forcing empty commit to trigger CI..."
+  echo "  No file changes — forcing empty commit to retrigger CI..."
   git commit --allow-empty -m "chore: retrigger GitHub Pages deploy"
 else
-  git commit -m "fix(ci): force vite@6.3.5 build for GitHub Pages"
+  git commit -m "fix(ci): use npm ci with lockfile for Vite 6 GitHub Pages build"
 fi
 
 echo ""
 echo "  Pushing..."
 git push origin main
-echo ""
-
-echo "  Verify on GitHub (wait 10 sec then check):"
-echo "  curl -s https://raw.githubusercontent.com/nostalgicgarethdev/genesis/main/website/package.json | grep build"
-sleep 3
-curl -s "https://raw.githubusercontent.com/nostalgicgarethdev/genesis/main/website/package.json?t=$(date +%s)" | grep '"build"' || true
 echo ""
 echo "  Actions: https://github.com/nostalgicgarethdev/genesis/actions"
 echo ""

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
-  fetchAuth, createGenesis, verifyGenesis, logout, loginWithX,
+  fetchAuth, completeAuthSession, createGenesis, verifyGenesis, logout, loginWithX,
   type AuthState, type ChildAgent,
 } from '../lib/auth'
 import { goHome } from '../lib/nav'
@@ -23,7 +23,26 @@ export function Dashboard() {
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    const init = async () => {
+      const params = new URLSearchParams(window.location.search)
+      const code = params.get('auth_code')
+      if (code) {
+        params.delete('auth_code')
+        const query = params.toString()
+        const path = window.location.pathname
+        window.history.replaceState(null, '', query ? `${path}?${query}` : path)
+        const state = await completeAuthSession(code)
+        if (state) {
+          setAuth(state)
+          setLoading(false)
+          return
+        }
+      }
+      await load()
+    }
+    void init()
+  }, [])
 
   const handleLogout = async () => {
     await logout()

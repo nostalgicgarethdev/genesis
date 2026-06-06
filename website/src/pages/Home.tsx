@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { fetchAuth } from '../lib/auth'
+import { dashboardUrl } from '../lib/paths'
 import { Navbar } from '../components/layout/Navbar'
 import { Footer } from '../components/layout/Footer'
 import { Hero } from '../components/home/Hero'
@@ -17,6 +19,14 @@ const AUTH_ERRORS: Record<string, string> = {
 export function Home() {
   const [scrolled, setScrolled] = useState(false)
   const [authError, setAuthError] = useState('')
+
+  useEffect(() => {
+    void fetchAuth().then((state) => {
+      if (state.authenticated && state.user?.id !== 'dev_user_1') {
+        window.location.replace(dashboardUrl())
+      }
+    })
+  }, [])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)

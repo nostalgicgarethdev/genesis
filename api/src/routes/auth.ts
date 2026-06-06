@@ -4,7 +4,13 @@ import { randomHex, sha256Base64Url } from '../crypto.js'
 import { db } from '../db.js'
 import { findVerificationTweet } from '../x-api.js'
 import { isMockAuth } from '../dev.js'
-import { clearSessionCookieOptions, oauthCookieOptions, sessionCookieOptions } from '../cookies.js'
+import { createAuthCode, consumeAuthCode } from '../auth-codes.js'
+import {
+  clearOauthCookieOptions,
+  clearSessionCookieOptions,
+  oauthCookieOptions,
+  sessionCookieOptions,
+} from '../cookies.js'
 
 const X_AUTH_URL = 'https://twitter.com/i/oauth2/authorize'
 const X_TOKEN_URL = 'https://api.twitter.com/2/oauth2/token'
@@ -12,8 +18,9 @@ const X_USER_URL = 'https://api.twitter.com/2/users/me'
 
 const SCOPES = ['tweet.read', 'users.read', 'offline.access'].join(' ')
 
-function dashboardRedirect(frontend: string): string {
-  return `${frontend.replace(/\/$/, '')}/dashboard`
+function dashboardRedirect(frontend: string, authCode?: string): string {
+  const base = `${frontend.replace(/\/$/, '')}/dashboard`
+  return authCode ? `${base}?auth_code=${encodeURIComponent(authCode)}` : base
 }
 
 function homeRedirect(frontend: string, query: string): string {
@@ -23,10 +30,37 @@ function homeRedirect(frontend: string, query: string): string {
 
 export const auth = new Hono()
 
-function setUserSession(c: Context, xUserId: string) {
+function setUserSession(c: Context, xUserId: string): string {
   const sessionId = randomHex(32)
   db.createSession(sessionId, xUserId)
   setCookie(c, 'genesis_session', sessionId, sessionCookieOptions())
+  return sessionId
+}
+
+function authPayload(sessionId: string) {
+  const user = db.getSession(sessionId)
+  if (!user) return null
+
+  const genesis = db.getGenesisByXUser(user.id)
+
+  return {
+    authenticated: true as const,
+    user: {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      profileImageUrl: user.profileImageUrl,
+    },
+    genesis: genesis
+      ? {
+          id: genesis.id,
+          name: genesis.name,
+          status: genesis.status,
+          verificationCode: genesis.verificationCode,
+        }
+      : null,
+    children: genesis?.status === 'active' ? db.listChildren(genesis.id) : [],
+  }
 }
 
 auth.get('/x', async (c) => {
@@ -79,8 +113,8 @@ auth.get('/x/callback', async (c) => {
   const storedState = getCookie(c, 'oauth_state')
   const codeVerifier = getCookie(c, 'oauth_verifier')
 
-  deleteCookie(c, 'oauth_state', { path: '/' })
-  deleteCookie(c, 'oauth_verifier', { path: '/' })
+  deleteCookie(c, 'oauth_state', clearOauthCookieOptions())
+  deleteCookie(c, 'oauth_verifier', clearOauthCookieOptions())
 
   if (!code || !state || state !== storedState || !codeVerifier) {
     return c.redirect(homeRedirect(frontend, 'auth=error&reason=invalid_state'))
@@ -136,37 +170,32 @@ auth.get('/x/callback', async (c) => {
     refreshToken: tokens.refresh_token,
   })
 
-  setUserSession(c, data.id)
-  return c.redirect(dashboardRedirect(frontend))
+  const sessionId = setUserSession(c, data.id)
+  const authCode = createAuthCode(sessionId)
+  return c.redirect(dashboardRedirect(frontend, authCode))
 })
 
 auth.get('/me', (c) => {
   const sessionId = getCookie(c, 'genesis_session')
   if (!sessionId) return c.json({ authenticated: false })
 
-  const user = db.getSession(sessionId)
-  if (!user) return c.json({ authenticated: false })
+  const payload = authPayload(sessionId)
+  if (!payload) return c.json({ authenticated: false })
 
-  const genesis = db.getGenesisByXUser(user.id)
+  return c.json(payload)
+})
 
-  return c.json({
-    authenticated: true,
-    user: {
-      id: user.id,
-      username: user.username,
-      name: user.name,
-      profileImageUrl: user.profileImageUrl,
-    },
-    genesis: genesis
-      ? {
-          id: genesis.id,
-          name: genesis.name,
-          status: genesis.status,
-          verificationCode: genesis.verificationCode,
-        }
-      : null,
-    children: genesis?.status === 'active' ? db.listChildren(genesis.id) : [],
-  })
+auth.post('/session/complete', async (c) => {
+  const body = await c.req.json<{ code?: string }>()
+  const sessionId = body.code ? consumeAuthCode(body.code) : null
+  if (!sessionId) return c.json({ error: 'Invalid or expired login code' }, 400)
+
+  setCookie(c, 'genesis_session', sessionId, sessionCookieOptions())
+
+  const payload = authPayload(sessionId)
+  if (!payload) return c.json({ error: 'Session not found' }, 404)
+
+  return c.json(payload)
 })
 
 auth.post('/genesis', async (c) => {
