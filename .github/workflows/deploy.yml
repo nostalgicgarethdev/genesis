@@ -35,7 +35,6 @@ jobs:
           if [ -f ../package-lock.json ]; then mv ../package-lock.json ../_package-lock.json.workspace; fi
 
           rm -rf node_modules package-lock.json
-          npm install vite@6.3.5 --save-exact
           npm install
 
           VITE_VER=$(node -p "require('./node_modules/vite/package.json').version")
