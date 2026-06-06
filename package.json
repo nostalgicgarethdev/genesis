@@ -1,0 +1,16 @@
+{
+  "name": "agentswarm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AgentSwarm Protocol — Autonomous AI agent swarms on Solana",
+  "scripts": {
+    "dev": "npm run dev --workspace=website",
+    "build": "npm run build --workspace=website && npm run build --workspace=sdk",
+    "build:website": "npm run build --workspace=website",
+    "build:sdk": "npm run build --workspace=sdk"
+  },
+  "workspaces": [
+    "website",
+    "sdk"
+  ]
+}

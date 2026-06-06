@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --color-swarm-purple: #9945ff;
+  --color-swarm-green: #14f195;
+  --color-swarm-cyan: #00d4ff;
+  --color-swarm-dark: #0a0a0f;
+  --color-swarm-surface: #12121a;
+  --color-swarm-border: #1e1e2e;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--color-swarm-dark);
+  color: #e4e4ef;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-swarm-purple) 40%, transparent);
+  color: white;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(120px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(120px) rotate(-360deg); }
+}
+
+@keyframes grid-scroll {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(40px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--color-swarm-green), var(--color-swarm-cyan), var(--color-swarm-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass {
+  background: color-mix(in srgb, var(--color-swarm-surface) 80%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-swarm-border);
+}
+
+.glow-purple {
+  box-shadow: 0 0 40px color-mix(in srgb, var(--color-swarm-purple) 25%, transparent);
+}
+
+.glow-green {
+  box-shadow: 0 0 40px color-mix(in srgb, var(--color-swarm-green) 20%, transparent);
+}
