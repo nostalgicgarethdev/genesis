@@ -137,6 +137,7 @@ npm run readme:assets
 | [Roadmap](docs/ROADMAP.md) | What's built vs planned |
 | [Agent onboarding](skill.md) | Skill file for agent runtimes |
 | [GitHub deploy](GITHUB.md) | Pages + Actions setup |
+| [API deploy (Render)](docs/DEPLOY_API.md) | Free hosting + real X OAuth |
 
 ---
 

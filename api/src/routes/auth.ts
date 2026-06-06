@@ -4,6 +4,7 @@ import { randomHex, sha256Base64Url } from '../crypto.js'
 import { db } from '../db.js'
 import { findVerificationTweet } from '../x-api.js'
 import { isMockAuth } from '../dev.js'
+import { clearSessionCookieOptions, oauthCookieOptions, sessionCookieOptions } from '../cookies.js'
 
 const X_AUTH_URL = 'https://twitter.com/i/oauth2/authorize'
 const X_TOKEN_URL = 'https://api.twitter.com/2/oauth2/token'
@@ -25,13 +26,7 @@ export const auth = new Hono()
 function setUserSession(c: Context, xUserId: string) {
   const sessionId = randomHex(32)
   db.createSession(sessionId, xUserId)
-  setCookie(c, 'genesis_session', sessionId, {
-    httpOnly: true,
-    secure: false,
-    sameSite: 'Lax',
-    maxAge: 60 * 60 * 24 * 30,
-    path: '/',
-  })
+  setCookie(c, 'genesis_session', sessionId, sessionCookieOptions())
 }
 
 auth.get('/x', async (c) => {
@@ -61,8 +56,8 @@ auth.get('/x', async (c) => {
   const codeVerifier = randomHex(32)
   const codeChallenge = await sha256Base64Url(codeVerifier)
 
-  setCookie(c, 'oauth_state', state, { httpOnly: true, secure: false, sameSite: 'Lax', maxAge: 600, path: '/' })
-  setCookie(c, 'oauth_verifier', codeVerifier, { httpOnly: true, secure: false, sameSite: 'Lax', maxAge: 600, path: '/' })
+  setCookie(c, 'oauth_state', state, oauthCookieOptions(600))
+  setCookie(c, 'oauth_verifier', codeVerifier, oauthCookieOptions(600))
 
   const params = new URLSearchParams({
     response_type: 'code',
@@ -225,6 +220,6 @@ auth.post('/genesis/verify', async (c) => {
 auth.post('/logout', (c) => {
   const sessionId = getCookie(c, 'genesis_session')
   if (sessionId) db.deleteSession(sessionId)
-  deleteCookie(c, 'genesis_session', { path: '/' })
+  deleteCookie(c, 'genesis_session', clearSessionCookieOptions())
   return c.json({ ok: true })
 })

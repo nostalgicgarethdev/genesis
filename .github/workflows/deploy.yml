@@ -32,6 +32,7 @@ jobs:
         env:
           GITHUB_PAGES: true
           VITE_SITE_URL: https://nostalgicgarethdev.github.io/genesis
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://genesis-api.onrender.com' }}
         run: |
           VITE_VER=$(node -p "require('./node_modules/vite/package.json').version")
           echo "vite version: $VITE_VER"

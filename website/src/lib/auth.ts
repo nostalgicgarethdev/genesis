@@ -78,7 +78,8 @@ export async function fetchAuth(): Promise<AuthState> {
 }
 
 export async function loginWithX(): Promise<void> {
-  if (await apiAvailable()) {
+  const remoteApi = Boolean(import.meta.env.VITE_API_URL)
+  if (remoteApi || await apiAvailable()) {
     window.location.href = apiPath('/auth/x')
     return
   }

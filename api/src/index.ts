@@ -36,10 +36,11 @@ app.get('/api/health', (c) => c.json({ status: 'ok', service: 'genesis-api' }))
 app.route('/api/auth', auth)
 app.route('/api/agents', agents)
 
-const port = Number(process.env.API_PORT ?? 3001)
+const port = Number(process.env.PORT ?? process.env.API_PORT ?? 3001)
+const hostname = process.env.HOST ?? '0.0.0.0'
 
-serve({ fetch: app.fetch, port, hostname: '127.0.0.1' }, () => {
-  console.log(`Genesis API → http://127.0.0.1:${port}`)
+serve({ fetch: app.fetch, port, hostname }, () => {
+  console.log(`Genesis API → http://${hostname}:${port}`)
   if (process.env.DEV_MOCK_AUTH === 'true') {
     console.log('Dev mock auth enabled — Login with X works without credentials')
   }

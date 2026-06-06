@@ -1,0 +1,26 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Dashboard: New → Blueprint → connect this repo
+services:
+  - type: web
+    name: genesis-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npm run build --workspace=api
+    startCommand: npm run start --workspace=api
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DEV_MOCK_AUTH
+        value: false
+      - key: FRONTEND_URL
+        value: https://nostalgicgarethdev.github.io/genesis
+      - key: X_REDIRECT_URI
+        value: https://genesis-api.onrender.com/api/auth/x/callback
+      - key: X_CLIENT_ID
+        sync: false
+      - key: X_CLIENT_SECRET
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
