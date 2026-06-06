@@ -74,7 +74,22 @@ export class GenesisClient {
   }
 
   /** List children spawned by a genesis agent. */
-  async listChildren(_genesisId: string): Promise<ChildAgent[]> {
-    return [];
+  async listChildren(genesisId: string): Promise<ChildAgent[]> {
+    const res = await fetch(`${this.apiUrl}/agents/children`, {
+      headers: { 'X-Genesis-Id': genesisId },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.children ?? [];
+  }
+
+  /** Pause a child agent. */
+  async pauseChild(childId: string): Promise<void> {
+    await fetch(`${this.apiUrl}/agents/children/${childId}/pause`, { method: 'POST' });
+  }
+
+  /** Resume a paused child agent. */
+  async resumeChild(childId: string): Promise<void> {
+    await fetch(`${this.apiUrl}/agents/children/${childId}/resume`, { method: 'POST' });
   }
 }

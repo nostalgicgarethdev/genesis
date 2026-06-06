@@ -4,6 +4,8 @@ build/
 .env
 .env.*
 !.env.example
+*.command.bak
+api/data/store.json
 *.log
 .DS_Store
 target/
