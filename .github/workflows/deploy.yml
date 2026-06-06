@@ -27,27 +27,20 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install and build website (standalone)
+      - name: Install and build website
         env:
           GITHUB_PAGES: true
         run: |
-          # Hide monorepo root so npm does not hoist Vite 8 from workspace lockfile
           if [ -f ../package.json ]; then mv ../package.json ../_package.json.workspace; fi
           if [ -f ../package-lock.json ]; then mv ../package-lock.json ../_package-lock.json.workspace; fi
 
           rm -rf node_modules package-lock.json
+          npm install vite@6.3.5 --save-exact
           npm install
 
           VITE_VER=$(node -p "require('./node_modules/vite/package.json').version")
           echo "vite version: $VITE_VER"
-          if [ "$VITE_VER" != "6.3.5" ]; then
-            echo "ERROR: expected vite 6.3.5"
-            exit 1
-          fi
-          if [ -d node_modules/rolldown ]; then
-            echo "ERROR: rolldown present — Vite 8 was installed"
-            exit 1
-          fi
+          test "$VITE_VER" = "6.3.5"
 
           npm run build
 
