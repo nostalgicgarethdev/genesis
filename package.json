@@ -10,7 +10,8 @@
     "kill": "lsof -ti:5173,3001 | xargs kill -9 2>/dev/null || true",
     "build": "npm run build --workspace=api && npm run build --workspace=website && npm run build --workspace=sdk",
     "build:website": "npm run build --workspace=website",
-    "build:sdk": "npm run build --workspace=sdk"
+    "build:sdk": "npm run build --workspace=sdk",
+    "readme:assets": "node scripts/export-readme-assets.mjs"
   },
   "workspaces": [
     "api",
@@ -22,6 +23,8 @@
     "@vitejs/plugin-react": "4.3.4"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "@resvg/resvg-js": "^2.6.2",
+    "concurrently": "^9.1.2",
+    "pngjs": "^7.0.0"
   }
 }
