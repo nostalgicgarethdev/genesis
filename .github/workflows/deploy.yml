@@ -17,37 +17,27 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: website
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
-      - name: Install and build website
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build website
         env:
           GITHUB_PAGES: true
         run: |
-          if [ -f ../package.json ]; then mv ../package.json ../_package.json.workspace; fi
-          if [ -f ../package-lock.json ]; then mv ../package-lock.json ../_package-lock.json.workspace; fi
-
-          rm -rf node_modules package-lock.json
-          npm install
-
           VITE_VER=$(node -p "require('./node_modules/vite/package.json').version")
           echo "vite version: $VITE_VER"
           test "$VITE_VER" = "6.3.5"
-
-          npm run build
-
-          if [ -f ../_package.json.workspace ]; then mv ../_package.json.workspace ../package.json; fi
-          if [ -f ../_package-lock.json.workspace ]; then mv ../_package-lock.json.workspace ../package-lock.json; fi
+          npm run build --workspace=website
 
       - name: Add SPA fallback
-        working-directory: .
         run: cp website/dist/index.html website/dist/404.html
 
       - uses: actions/upload-pages-artifact@v3
