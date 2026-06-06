@@ -7,8 +7,8 @@ Host the Genesis API on [Render](https://render.com) so **Continue with X** uses
 | Piece | Host | URL |
 |-------|------|-----|
 | Website | GitHub Pages | `https://nostalgicgarethdev.github.io/genesis` |
-| API | Render (free) | `https://genesis-api.onrender.com` |
-| OAuth callback | X Developer Portal | `https://genesis-api.onrender.com/api/auth/x/callback` |
+| API | Render (free) | `https://genesis-api-2v3s.onrender.com` |
+| OAuth callback | X Developer Portal | `https://genesis-api-2v3s.onrender.com/api/auth/x/callback` |
 
 ## 1 — Deploy API on Render
 
@@ -19,7 +19,7 @@ Host the Genesis API on [Render](https://render.com) so **Continue with X** uses
    - `X_CLIENT_ID` — from [X Developer Portal](https://developer.x.com/en/portal/dashboard)
    - `X_CLIENT_SECRET` — same app
 5. Click **Apply**. Wait for the first deploy (~3–5 min).
-6. Confirm health: `https://genesis-api.onrender.com/api/health` → `{"status":"ok",...}`
+6. Confirm health: `https://genesis-api-2v3s.onrender.com/api/health` → `{"status":"ok",...}`
 
 `SESSION_SECRET` is auto-generated. `FRONTEND_URL` and `X_REDIRECT_URI` are set in `render.yaml`.
 
@@ -30,7 +30,7 @@ In your X app → **User authentication settings**:
 | Field | Value |
 |-------|--------|
 | Type | Web App, OAuth 2.0 |
-| Callback URL | `https://genesis-api.onrender.com/api/auth/x/callback` |
+| Callback URL | `https://genesis-api-2v3s.onrender.com/api/auth/x/callback` |
 | Website URL | `https://nostalgicgarethdev.github.io/genesis` |
 
 Copy **Client ID** and **Client Secret** into Render env vars if not done already.
@@ -40,14 +40,14 @@ Copy **Client ID** and **Client Secret** into Render env vars if not done alread
 The GitHub Actions workflow already builds with:
 
 ```
-VITE_API_URL=https://genesis-api.onrender.com
+VITE_API_URL=https://genesis-api-2v3s.onrender.com
 ```
 
 Override in repo **Settings → Secrets and variables → Actions → Variables**:
 
 | Name | Value |
 |------|--------|
-| `VITE_API_URL` | `https://genesis-api.onrender.com` (or your Render URL if renamed) |
+| `VITE_API_URL` | `https://genesis-api-2v3s.onrender.com` (or your Render URL if renamed) |
 
 Push to `main` to redeploy the site, or re-run the **Deploy to GitHub Pages** workflow.
 

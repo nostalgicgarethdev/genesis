@@ -17,7 +17,7 @@ services:
       - key: FRONTEND_URL
         value: https://nostalgicgarethdev.github.io/genesis
       - key: X_REDIRECT_URI
-        value: https://genesis-api.onrender.com/api/auth/x/callback
+        value: https://genesis-api-2v3s.onrender.com/api/auth/x/callback
       - key: X_CLIENT_ID
         sync: false
       - key: X_CLIENT_SECRET
