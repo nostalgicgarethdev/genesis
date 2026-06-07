@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import {
   fetchAuth, completeAuthSession, createGenesis, verifyGenesis, logout, loginWithX,
   setLaunchWallet,
-  type AuthState, type ChildAgent,
+  approveProposal, rejectProposal,
+  type AuthState, type ChildAgent, type TokenizationProposal,
 } from '../lib/auth'
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { goHome } from '../lib/nav'
 import { homeUrl } from '../lib/paths'
 import { Logo } from '../components/brand/Logo'
@@ -20,6 +22,7 @@ export function Dashboard() {
   const [walletPk, setWalletPk] = useState('')
   const [walletSaving, setWalletSaving] = useState(false)
   const [walletMsg, setWalletMsg] = useState('')
+  const [proposalAction, setProposalAction] = useState('')
 
   const load = async () => {
     const state = await fetchAuth()
@@ -72,6 +75,26 @@ export function Dashboard() {
     }
   }
 
+  const handleApproveProposal = async (proposalId: string) => {
+    setProposalAction('approving')
+    try {
+      await approveProposal(proposalId)
+      await load()
+    } finally {
+      setProposalAction('')
+    }
+  }
+
+  const handleRejectProposal = async (proposalId: string) => {
+    setProposalAction('rejecting')
+    try {
+      await rejectProposal(proposalId)
+      await load()
+    } finally {
+      setProposalAction('')
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -98,6 +121,7 @@ export function Dashboard() {
 
   const { user, genesis } = auth
   const children: ChildAgent[] = auth.children ?? []
+  const proposals: TokenizationProposal[] = auth.proposals ?? []
   const totalFees = children.reduce((s, c) => s + c.feesEarned, 0)
 
   return (
@@ -112,6 +136,7 @@ export function Dashboard() {
               <img src={user.profileImageUrl} alt="" className="h-7 w-7 rounded-full ring-1 ring-line" />
             )}
             <span className="hidden text-sm text-muted sm:inline">@{user?.username}</span>
+            <WalletMultiButton className="text-xs" />
             <button type="button" onClick={handleLogout} className="text-sm text-muted hover:text-text">
               Logout
             </button>
@@ -202,7 +227,7 @@ export function Dashboard() {
                     )}
                   </p>
                 </div>
-                <div className="text-[10px] text-muted text-right">Creator fees + tx payer<br />Use a dedicated burner wallet</div>
+                <div className="text-[10px] text-muted text-right">Creator fees + tx payer<br />Use a dedicated burner wallet only</div>
               </div>
               <div className="mt-3 flex gap-2">
                 <input
@@ -222,7 +247,10 @@ export function Dashboard() {
                 </button>
               </div>
               {walletMsg && <p className="mt-2 text-xs text-sage">{walletMsg}</p>}
-              <p className="mt-2 text-[10px] text-red-400/80">Warning: This key will be used server-side to create tokens and pay small tx fees. Only fund it with what you are willing to spend on launches. Never use your main wallet.</p>
+              <p className="mt-2 text-[10px] text-red-400/80">
+                Warning: The private key is stored on the API server and used to sign real Solana transactions. 
+                Only use a dedicated burner wallet with a small amount of SOL. Never paste your main wallet key.
+              </p>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-5">
@@ -232,6 +260,46 @@ export function Dashboard() {
             {children.length > 0 && (
               <div className="grid gap-4 sm:grid-cols-2">
                 {children.map((child) => <ChildCard key={child.id} child={child} onUpdate={load} />)}
+              </div>
+            )}
+
+            {proposals.filter((p) => p.status === 'pending').length > 0 && (
+              <div className="mt-8">
+                <p className="section-label">Pending Tokenization Proposals (from agents)</p>
+                <div className="grid gap-4 sm:grid-cols-2 mt-4">
+                  {proposals
+                    .filter((p) => p.status === 'pending')
+                    .map((p) => {
+                      const child = children.find((c) => c.id === p.childId)
+                      return (
+                        <div key={p.id} className="panel rounded-xl p-5">
+                          <div>
+                            <span className="font-mono text-sm text-sage">${p.ticker}</span>
+                            <span className="ml-2 text-xs text-muted">for {child?.name || p.childId}</span>
+                          </div>
+                          <p className="mt-1 text-sm text-muted line-clamp-2">{child?.purpose}</p>
+                          {p.devBuySol ? <p className="text-xs mt-1">Dev buy: {p.devBuySol} SOL</p> : null}
+                          <div className="mt-3 flex gap-2">
+                            <button
+                              onClick={() => handleApproveProposal(p.id)}
+                              disabled={!!proposalAction}
+                              className="btn-primary text-xs px-3 py-1.5 rounded-lg disabled:opacity-50"
+                            >
+                              {proposalAction === 'approving' ? 'Approving...' : 'Approve & Launch'}
+                            </button>
+                            <button
+                              onClick={() => handleRejectProposal(p.id)}
+                              disabled={!!proposalAction}
+                              className="text-xs px-3 py-1.5 rounded-lg border border-line hover:bg-surface"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                </div>
+                <p className="text-[10px] text-muted mt-2">Agents propose via API. Approval triggers pump.fun launch (using launch wallet if configured).</p>
               </div>
             )}
           </div>

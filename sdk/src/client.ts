@@ -54,6 +54,17 @@ export class GenesisClient {
     };
   }
 
+  /** Propose tokenization (for genesis agents; human approves). */
+  async proposeTokenize(params: TokenizeChildParams): Promise<any> {
+    return {
+      id: `prop_${Date.now()}`,
+      childId: params.childId,
+      ticker: params.ticker,
+      status: 'pending',
+      createdAt: Date.now(),
+    };
+  }
+
   /** Tokenize a child agent on pump.fun. Fees route to human wallet. */
   async tokenizeChild(params: TokenizeChildParams): Promise<ChildAgent> {
     return {

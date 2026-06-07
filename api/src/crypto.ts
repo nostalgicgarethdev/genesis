@@ -6,7 +6,7 @@ export function randomHex(bytes = 32): string {
 
 export async function sha256Base64Url(input: string): Promise<string> {
   const data = new TextEncoder().encode(input)
-  const hash = await crypto.subtle.digest('SHA-256', data)
+  const hash = await crypto.subtle.digest('SHA-256', data as BufferSource)
   return btoa(String.fromCharCode(...new Uint8Array(hash)))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')

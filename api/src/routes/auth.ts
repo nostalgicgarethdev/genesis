@@ -67,6 +67,7 @@ function authPayload(sessionId: string) {
         }
       : null,
     children: genesis?.status === 'active' ? db.listChildren(genesis.id) : [],
+    proposals: genesis?.status === 'active' ? db.listProposals(genesis.id) : [],
   }
 }
 

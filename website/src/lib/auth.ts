@@ -36,6 +36,22 @@ export interface AuthState {
   user?: AuthUser
   genesis?: GenesisAgent | null
   children?: ChildAgent[]
+  proposals?: TokenizationProposal[]
+}
+
+export interface TokenizationProposal {
+  id: string
+  childId: string
+  genesisId: string
+  ticker: string
+  devBuySol?: number
+  twitter?: string
+  telegram?: string
+  website?: string
+  imageUrl?: string
+  status: 'pending' | 'approved' | 'rejected'
+  createdAt: number
+  approvedAt?: number
 }
 
 const DEV_USER: AuthUser = {
@@ -179,17 +195,110 @@ export async function spawnChild(name: string, purpose: string): Promise<ChildAg
   return child
 }
 
-export async function tokenizeChild(childId: string, ticker: string, devBuySol = 0): Promise<ChildAgent> {
+export interface TokenizeOptions {
+  devBuySol?: number
+  imageUrl?: string
+  twitter?: string
+  telegram?: string
+  website?: string
+}
+
+export async function proposeTokenize(
+  childId: string,
+  ticker: string,
+  devBuySol = 0,
+  opts: TokenizeOptions = {}
+): Promise<TokenizationProposal> {
+  const payload: any = {
+    ticker,
+    devBuySol: devBuySol > 0 ? devBuySol : undefined,
+    imageUrl: opts.imageUrl || undefined,
+    twitter: opts.twitter || undefined,
+    telegram: opts.telegram || undefined,
+    website: opts.website || undefined,
+  }
+
+  try {
+    const res = await fetch(apiPath(`/agents/children/${childId}/propose-tokenize`), {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      return data.proposal
+    }
+  } catch { /* dev fallback */ }
+
+  // const state = devAuthState()
+  const proposal: TokenizationProposal = {
+    id: `prop_${Date.now()}`,
+    childId,
+    genesisId: 'gen_dev',
+    ticker,
+    devBuySol: devBuySol > 0 ? devBuySol : undefined,
+    twitter: opts.twitter,
+    telegram: opts.telegram,
+    website: opts.website,
+    imageUrl: opts.imageUrl,
+    status: 'pending',
+    createdAt: Date.now(),
+  }
+  // In dev, we can store in local but for simplicity just return
+  return proposal
+}
+
+export async function approveProposal(proposalId: string): Promise<any> {
+  try {
+    const res = await fetch(apiPath(`/agents/proposals/${proposalId}/approve`), {
+      method: 'POST',
+      credentials: 'include',
+    })
+    if (res.ok) return res.json()
+  } catch { /* dev */ }
+  // const state = devAuthState()
+  // Simulate approve and tokenize in dev
+  return { proposal: { id: proposalId, status: 'approved' } }
+}
+
+export async function rejectProposal(proposalId: string): Promise<any> {
+  try {
+    const res = await fetch(apiPath(`/agents/proposals/${proposalId}/reject`), {
+      method: 'POST',
+      credentials: 'include',
+    })
+    if (res.ok) return res.json()
+  } catch { /* dev */ }
+  // const state = devAuthState()
+  return { proposal: { id: proposalId, status: 'rejected' } }
+}
+
+export async function tokenizeChild(
+  childId: string,
+  ticker: string,
+  devBuySol = 0,
+  opts: TokenizeOptions = {}
+): Promise<{ child: ChildAgent; signature?: string; note?: string }> {
+  const payload: any = {
+    ticker,
+    devBuySol: devBuySol > 0 ? devBuySol : undefined,
+    imageUrl: opts.imageUrl || undefined,
+    twitter: opts.twitter || undefined,
+    telegram: opts.telegram || undefined,
+    website: opts.website || undefined,
+  }
+
   try {
     const res = await fetch(apiPath(`/agents/children/${childId}/tokenize`), {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticker, devBuySol: devBuySol > 0 ? devBuySol : undefined }),
+      body: JSON.stringify(payload),
     })
     if (res.ok) {
       const data = await res.json()
-      return data.child
+      return { child: data.child, signature: data.signature, note: data.note }
     }
   } catch { /* dev fallback */ }
 
@@ -204,7 +313,7 @@ export async function tokenizeChild(childId: string, ticker: string, devBuySol =
     createdAt: Date.now(),
   }
   saveDevState(state)
-  return child
+  return { child }
 }
 
 export async function setLaunchWallet(privateKey: string): Promise<{ pubkey: string }> {

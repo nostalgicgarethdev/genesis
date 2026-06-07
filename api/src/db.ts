@@ -45,18 +45,34 @@ export interface ChildAgent {
   createdAt: number
 }
 
+export interface TokenizationProposal {
+  id: string
+  childId: string
+  genesisId: string
+  ticker: string
+  devBuySol?: number
+  twitter?: string
+  telegram?: string
+  website?: string
+  imageUrl?: string
+  status: 'pending' | 'approved' | 'rejected'
+  createdAt: number
+  approvedAt?: number
+}
+
 interface Store {
   users: Record<string, XUser & { accessToken: string; refreshToken?: string }>
   sessions: Record<string, string>
   genesis: Record<string, GenesisAgent>
   children: Record<string, ChildAgent>
+  proposals: Record<string, TokenizationProposal>
   oauthPending: Record<string, { codeVerifier: string; expires: number }>
   authCodes: Record<string, { sessionId: string; expires: number }>
 }
 
 function load(): Store {
   if (!existsSync(DB_PATH)) {
-    return { users: {}, sessions: {}, genesis: {}, children: {}, oauthPending: {}, authCodes: {} }
+    return { users: {}, sessions: {}, genesis: {}, children: {}, proposals: {}, oauthPending: {}, authCodes: {} }
   }
   const raw = JSON.parse(readFileSync(DB_PATH, 'utf-8')) as Partial<Store>
   return {
@@ -64,6 +80,7 @@ function load(): Store {
     sessions: raw.sessions ?? {},
     genesis: raw.genesis ?? {},
     children: raw.children ?? {},
+    proposals: raw.proposals ?? {},
     oauthPending: raw.oauthPending ?? {},
     authCodes: raw.authCodes ?? {},
   }
@@ -210,6 +227,61 @@ export const db = {
     child.token = { ticker, mintAddress, pumpFunUrl, createdAt: Date.now() }
     save(store)
     return child
+  },
+
+  createProposal(
+    genesisId: string,
+    childId: string,
+    ticker: string,
+    opts: { devBuySol?: number; twitter?: string; telegram?: string; website?: string; imageUrl?: string }
+  ): TokenizationProposal {
+    const store = load()
+    const proposal: TokenizationProposal = {
+      id: `prop_${randomId()}`,
+      childId,
+      genesisId,
+      ticker,
+      devBuySol: opts.devBuySol,
+      twitter: opts.twitter,
+      telegram: opts.telegram,
+      website: opts.website,
+      imageUrl: opts.imageUrl,
+      status: 'pending',
+      createdAt: Date.now(),
+    }
+    store.proposals[proposal.id] = proposal
+    save(store)
+    return proposal
+  },
+
+  listProposals(genesisId: string): TokenizationProposal[] {
+    const store = load()
+    return Object.values(store.proposals)
+      .filter((p) => p.genesisId === genesisId)
+      .sort((a, b) => b.createdAt - a.createdAt)
+  },
+
+  getProposal(proposalId: string): TokenizationProposal | undefined {
+    return load().proposals[proposalId]
+  },
+
+  approveProposal(proposalId: string): TokenizationProposal | undefined {
+    const store = load()
+    const proposal = store.proposals[proposalId]
+    if (!proposal || proposal.status !== 'pending') return undefined
+    proposal.status = 'approved'
+    proposal.approvedAt = Date.now()
+    save(store)
+    return proposal
+  },
+
+  rejectProposal(proposalId: string): TokenizationProposal | undefined {
+    const store = load()
+    const proposal = store.proposals[proposalId]
+    if (!proposal || proposal.status !== 'pending') return undefined
+    proposal.status = 'rejected'
+    save(store)
+    return proposal
   },
 
   saveOAuthPending(state: string, codeVerifier: string, ttlMs = 10 * 60 * 1000) {

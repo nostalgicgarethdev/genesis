@@ -9,13 +9,23 @@ export interface LaunchParams {
   description: string
   privateKey: string // base58 of the launch/creator wallet (funds tx + optional dev buy)
   devBuySol?: number // 0 or positive; if >0 a buy is included in the create bundle
-  imageSeed?: string // for deterministic placeholder image
+  imageUrl?: string // optional custom image (https). Falls back to placeholder
+  twitter?: string
+  telegram?: string
+  website?: string
 }
 
 export interface LaunchResult {
   mintAddress: string
   pumpFunUrl: string
   signature: string
+}
+
+export interface PreparedLaunch {
+  mint: string
+  mintSecret: string // base58 - client must sign the tx with this + their wallet
+  serializedTx: string // base64 encoded VersionedTransaction
+  pumpFunUrl: string
 }
 
 export function getPubkeyFromPrivateKey(privateKey: string): string {
@@ -31,22 +41,31 @@ export async function launchOnPumpFun(params: LaunchParams): Promise<LaunchResul
   const mint = Keypair.generate()
 
   // 1. Prepare metadata via pump.fun/ipfs (widely used by launchers; zero-config)
-  // Use a deterministic public placeholder image based on symbol/name (replace later with custom per-agent image)
-  const seed = params.imageSeed || params.symbol + params.name
-  const imageUrl = `https://picsum.photos/seed/${encodeURIComponent(seed)}/512/512`
+  let imageToUse = params.imageUrl
 
-  const imgRes = await fetch(imageUrl)
+  if (!imageToUse) {
+    // Fallback to a nice deterministic placeholder
+    const seed = params.symbol + params.name
+    imageToUse = `https://picsum.photos/seed/${encodeURIComponent(seed)}/512/512`
+  }
+
+  const imgRes = await fetch(imageToUse)
   if (!imgRes.ok) {
-    throw new Error(`Failed to fetch placeholder image for metadata (${imgRes.status})`)
+    throw new Error(`Failed to fetch image for metadata (${imgRes.status}) from ${imageToUse}`)
   }
   const imgBuf = Buffer.from(await imgRes.arrayBuffer())
+  const contentType = imgRes.headers.get('content-type') || 'image/jpeg'
 
   const form = new FormData()
-  form.append('file', new Blob([imgBuf], { type: 'image/jpeg' }), 'image.jpg')
+  form.append('file', new Blob([imgBuf], { type: contentType }), 'image')
   form.append('name', params.name)
   form.append('symbol', params.symbol)
   form.append('description', params.description.slice(0, 2000))
   form.append('showName', 'true')
+
+  if (params.twitter) form.append('twitter', params.twitter)
+  if (params.telegram) form.append('telegram', params.telegram)
+  if (params.website) form.append('website', params.website)
 
   const ipfsRes = await fetch('https://pump.fun/api/ipfs', {
     method: 'POST',
@@ -109,5 +128,101 @@ export async function launchOnPumpFun(params: LaunchParams): Promise<LaunchResul
     mintAddress,
     pumpFunUrl,
     signature,
+  }
+}
+
+export async function prepareClientLaunch(params: {
+  name: string
+  symbol: string
+  description: string
+  creatorPubkey: string
+  devBuySol?: number
+  imageUrl?: string
+  twitter?: string
+  telegram?: string
+  website?: string
+}): Promise<PreparedLaunch> {
+  const rpcUrl = process.env.SOLANA_RPC_URL || DEFAULT_RPC
+  // We don't need connection here for prepare, just for reference
+
+  const mint = Keypair.generate()
+  const creator = params.creatorPubkey
+
+  // Metadata upload (reuse logic)
+  let imageToUse = params.imageUrl
+  if (!imageToUse) {
+    const seed = params.symbol + params.name
+    imageToUse = `https://picsum.photos/seed/${encodeURIComponent(seed)}/512/512`
+  }
+
+  const imgRes = await fetch(imageToUse)
+  if (!imgRes.ok) {
+    throw new Error(`Failed to fetch image for metadata (${imgRes.status})`)
+  }
+  const imgBuf = Buffer.from(await imgRes.arrayBuffer())
+  const contentType = imgRes.headers.get('content-type') || 'image/jpeg'
+
+  const form = new FormData()
+  form.append('file', new Blob([imgBuf], { type: contentType }), 'image')
+  form.append('name', params.name)
+  form.append('symbol', params.symbol)
+  form.append('description', params.description.slice(0, 2000))
+  form.append('showName', 'true')
+
+  if (params.twitter) form.append('twitter', params.twitter)
+  if (params.telegram) form.append('telegram', params.telegram)
+  if (params.website) form.append('website', params.website)
+
+  const ipfsRes = await fetch('https://pump.fun/api/ipfs', {
+    method: 'POST',
+    body: form,
+  })
+  if (!ipfsRes.ok) {
+    const txt = await ipfsRes.text().catch(() => '')
+    throw new Error(`pump.fun ipfs metadata upload failed: ${ipfsRes.status} ${txt}`)
+  }
+  const ipfsJson = (await ipfsRes.json()) as { metadataUri?: string; uri?: string }
+  const metadataUri = ipfsJson.metadataUri || ipfsJson.uri
+  if (!metadataUri) throw new Error('No metadataUri returned')
+
+  const devBuy = Math.max(0, params.devBuySol ?? 0)
+
+  const payload = {
+    publicKey: creator,
+    action: 'create',
+    tokenMetadata: {
+      name: params.name,
+      symbol: params.symbol,
+      uri: metadataUri,
+    },
+    mint: mint.publicKey.toBase58(),
+    denominatedInSol: 'true',
+    amount: devBuy,
+    slippage: 15,
+    priorityFee: 0.00005,
+    pool: 'pump',
+  }
+
+  const tradeRes = await fetch('https://pumpportal.fun/api/trade-local', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!tradeRes.ok) {
+    const txt = await tradeRes.text().catch(() => '')
+    throw new Error(`pumpportal trade-local failed: ${tradeRes.status} ${txt}`)
+  }
+
+  const txBytes = new Uint8Array(await tradeRes.arrayBuffer())
+  const serializedTx = Buffer.from(txBytes).toString('base64')
+
+  const mintSecret = bs58.encode(mint.secretKey)
+  const pumpFunUrl = `https://pump.fun/coin/${mint.publicKey.toBase58()}`
+
+  return {
+    mint: mint.publicKey.toBase58(),
+    mintSecret,
+    serializedTx,
+    pumpFunUrl,
   }
 }
