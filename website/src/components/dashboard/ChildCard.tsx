@@ -4,6 +4,7 @@ import { pauseChild, resumeChild, tokenizeChild } from '../../lib/auth'
 
 export function ChildCard({ child, onUpdate }: { child: ChildAgent; onUpdate: () => void }) {
   const [ticker, setTicker] = useState(child.name.slice(0, 6).toUpperCase())
+  const [devBuy, setDevBuy] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -17,7 +18,7 @@ export function ChildCard({ child, onUpdate }: { child: ChildAgent; onUpdate: ()
   const handleTokenize = async () => {
     setLoading(true)
     setError('')
-    try { await tokenizeChild(child.id, ticker); onUpdate() }
+    try { await tokenizeChild(child.id, ticker, devBuy); onUpdate() }
     catch (e) { setError(e instanceof Error ? e.message : 'Failed') }
     finally { setLoading(false) }
   }
@@ -53,21 +54,37 @@ export function ChildCard({ child, onUpdate }: { child: ChildAgent; onUpdate: ()
           </div>
         </div>
       ) : child.status !== 'paused' ? (
-        <div className="mt-4 flex gap-2">
-          <input
-            value={ticker}
-            onChange={(e) => setTicker(e.target.value.toUpperCase())}
-            maxLength={10}
-            className="flex-1 rounded-lg border border-line bg-void px-3 py-2 font-mono text-xs outline-none focus:border-accent-dim"
-          />
-          <button
-            type="button"
-            onClick={handleTokenize}
-            disabled={loading}
-            className="btn-primary shrink-0 rounded-lg px-3 py-2 text-xs disabled:opacity-50"
-          >
-            Tokenize
-          </button>
+        <div className="mt-4 space-y-2">
+          <div className="flex gap-2">
+            <input
+              value={ticker}
+              onChange={(e) => setTicker(e.target.value.toUpperCase())}
+              maxLength={10}
+              placeholder="TICKER"
+              className="flex-1 rounded-lg border border-line bg-void px-3 py-2 font-mono text-xs outline-none focus:border-accent-dim"
+            />
+            <div className="flex items-center gap-1 rounded-lg border border-line bg-void px-2 text-xs">
+              <span className="text-muted">dev buy</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={devBuy}
+                onChange={(e) => setDevBuy(Math.max(0, parseFloat(e.target.value) || 0))}
+                className="w-16 bg-transparent font-mono text-xs outline-none"
+              />
+              <span className="text-muted">SOL</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleTokenize}
+              disabled={loading}
+              className="btn-primary shrink-0 rounded-lg px-3 py-2 text-xs disabled:opacity-50"
+            >
+              Tokenize
+            </button>
+          </div>
+          <p className="text-[10px] text-muted">0 = create only. Small dev buy (e.g. 0.05) helps initial momentum. Uses your linked launch wallet.</p>
         </div>
       ) : null}
 

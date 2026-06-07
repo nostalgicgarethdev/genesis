@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   fetchAuth, completeAuthSession, createGenesis, verifyGenesis, logout, loginWithX,
+  setLaunchWallet,
   type AuthState, type ChildAgent,
 } from '../lib/auth'
 import { goHome } from '../lib/nav'
@@ -16,6 +17,9 @@ export function Dashboard() {
   const [creating, setCreating] = useState(false)
   const [verifying, setVerifying] = useState(false)
   const [verifyError, setVerifyError] = useState('')
+  const [walletPk, setWalletPk] = useState('')
+  const [walletSaving, setWalletSaving] = useState(false)
+  const [walletMsg, setWalletMsg] = useState('')
 
   const load = async () => {
     const state = await fetchAuth()
@@ -50,6 +54,22 @@ export function Dashboard() {
   const handleLogout = async () => {
     await logout()
     goHome()
+  }
+
+  const handleSaveLaunchWallet = async () => {
+    if (!walletPk.trim()) return
+    setWalletSaving(true)
+    setWalletMsg('')
+    try {
+      const res = await setLaunchWallet(walletPk.trim())
+      setWalletMsg(`Saved. Pubkey: ${res.pubkey.slice(0, 6)}...${res.pubkey.slice(-4)}. Real launches enabled.`)
+      setWalletPk('')
+      await load()
+    } catch (e: any) {
+      setWalletMsg(e?.message || 'Failed to save key')
+    } finally {
+      setWalletSaving(false)
+    }
   }
 
   if (loading) {
@@ -168,6 +188,43 @@ export function Dashboard() {
                 <p className="font-display mt-2 text-xl font-semibold text-sage">{totalFees.toFixed(1)} SOL</p>
               </div>
             </div>
+
+            {/* Launch wallet for real pump.fun tokenization (creator fees go here) */}
+            <div className="panel rounded-xl p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted">Launch Wallet (pump.fun)</p>
+                  <p className="mt-1 font-mono text-sm">
+                    {genesis.launchWalletPubkey ? (
+                      <span className="text-sage">{genesis.launchWalletPubkey}</span>
+                    ) : (
+                      <span className="text-muted">Not linked — tokenizes will simulate</span>
+                    )}
+                  </p>
+                </div>
+                <div className="text-[10px] text-muted text-right">Creator fees + tx payer<br />Use a dedicated burner wallet</div>
+              </div>
+              <div className="mt-3 flex gap-2">
+                <input
+                  type="password"
+                  value={walletPk}
+                  onChange={(e) => setWalletPk(e.target.value)}
+                  placeholder="Paste base58 private key (never shared, stored in your API DB)"
+                  className="flex-1 rounded-lg border border-line bg-void px-3 py-2 font-mono text-xs outline-none focus:border-accent-dim"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveLaunchWallet}
+                  disabled={walletSaving || !walletPk.trim()}
+                  className="btn-primary shrink-0 rounded-lg px-4 py-2 text-xs disabled:opacity-50"
+                >
+                  {walletSaving ? 'Saving...' : 'Save Key'}
+                </button>
+              </div>
+              {walletMsg && <p className="mt-2 text-xs text-sage">{walletMsg}</p>}
+              <p className="mt-2 text-[10px] text-red-400/80">Warning: This key will be used server-side to create tokens and pay small tx fees. Only fund it with what you are willing to spend on launches. Never use your main wallet.</p>
+            </div>
+
             <div className="grid gap-6 lg:grid-cols-5">
               <div className="lg:col-span-2"><SpawnForm onSpawned={load} /></div>
               <div className="lg:col-span-3"><LineageView genesisName={genesis.name} children={children} /></div>

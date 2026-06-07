@@ -1,6 +1,8 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
+import { Keypair } from '@solana/web3.js'
+import bs58 from 'bs58'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DB_PATH = join(__dirname, '../data/store.json')
@@ -19,6 +21,10 @@ export interface GenesisAgent {
   status: 'pending_verification' | 'active'
   verificationCode: string
   createdAt: number
+  // Launch wallet (for pump.fun creator fees + paying for create tx + optional dev buy)
+  // The private key is stored server-side only (use a dedicated low-value wallet!).
+  launchPrivateKey?: string
+  launchWalletPubkey?: string
 }
 
 export type ChildStatus = 'spawning' | 'active' | 'paused' | 'tokenized'
@@ -131,6 +137,28 @@ export const db = {
     agent.status = 'active'
     save(store)
     return agent
+  },
+
+  setLaunchWallet(genesisId: string, privateKey: string): { pubkey: string } {
+    const trimmed = privateKey.trim()
+    if (!trimmed) throw new Error('INVALID_PRIVATE_KEY')
+
+    let pubkey: string
+    try {
+      const kp = Keypair.fromSecretKey(bs58.decode(trimmed))
+      pubkey = kp.publicKey.toBase58()
+    } catch {
+      throw new Error('INVALID_PRIVATE_KEY')
+    }
+
+    const store = load()
+    const agent = store.genesis[genesisId]
+    if (!agent) throw new Error('GENESIS_NOT_FOUND')
+
+    agent.launchPrivateKey = trimmed
+    agent.launchWalletPubkey = pubkey
+    save(store)
+    return { pubkey }
   },
 
   listChildren(genesisId: string): ChildAgent[] {

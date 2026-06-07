@@ -63,6 +63,7 @@ function authPayload(sessionId: string) {
           name: genesis.name,
           status: genesis.status,
           verificationCode: genesis.verificationCode,
+          launchWalletPubkey: genesis.launchWalletPubkey,
         }
       : null,
     children: genesis?.status === 'active' ? db.listChildren(genesis.id) : [],

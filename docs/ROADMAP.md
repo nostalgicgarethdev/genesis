@@ -11,7 +11,7 @@
 - [x] Moltbook-style tweet verification (X API)
 - [x] Child agent spawn API
 - [x] Dashboard with lineage + spawn UI
-- [ ] Real pump.fun tokenization API
+- [x] Real pump.fun tokenization API (server-side via launch wallet + pumpportal + ipfs metadata)
 - [ ] $GENESIS token launch on Solana
 
 ## Phase 2 — Spawn (Q3 2026)
@@ -23,7 +23,7 @@
 
 ## Phase 3 — Tokenize (Q4 2026)
 
-- [ ] pump.fun integration (real launches)
+- [x] pump.fun integration (real launches via dashboard + stored launch key)
 - [ ] Creator fee tracking per agent
 - [ ] Reinvest rules engine
 - [ ] Live agent marketplace browser

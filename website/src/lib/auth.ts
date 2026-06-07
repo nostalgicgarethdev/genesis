@@ -12,6 +12,7 @@ export interface GenesisAgent {
   name: string
   status: 'pending_verification' | 'active'
   verificationCode: string
+  launchWalletPubkey?: string
 }
 
 export interface ChildAgent {
@@ -178,13 +179,13 @@ export async function spawnChild(name: string, purpose: string): Promise<ChildAg
   return child
 }
 
-export async function tokenizeChild(childId: string, ticker: string): Promise<ChildAgent> {
+export async function tokenizeChild(childId: string, ticker: string, devBuySol = 0): Promise<ChildAgent> {
   try {
     const res = await fetch(apiPath(`/agents/children/${childId}/tokenize`), {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticker }),
+      body: JSON.stringify({ ticker, devBuySol: devBuySol > 0 ? devBuySol : undefined }),
     })
     if (res.ok) {
       const data = await res.json()
@@ -204,6 +205,31 @@ export async function tokenizeChild(childId: string, ticker: string): Promise<Ch
   }
   saveDevState(state)
   return child
+}
+
+export async function setLaunchWallet(privateKey: string): Promise<{ pubkey: string }> {
+  try {
+    const res = await fetch(apiPath('/agents/fee-wallet'), {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ privateKey }),
+    })
+    if (res.ok) {
+      return await res.json()
+    }
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.error || 'Failed to save launch wallet')
+  } catch (e) {
+    // dev fallback: just pretend we saved (no real launches in pure dev without api)
+    const pubkey = 'DevWallet' + Math.random().toString(36).slice(2, 10)
+    const state = devAuthState()
+    if (state.genesis) {
+      ;(state.genesis as any).launchWalletPubkey = pubkey
+      saveDevState(state)
+    }
+    return { pubkey }
+  }
 }
 
 export async function pauseChild(childId: string): Promise<void> {
